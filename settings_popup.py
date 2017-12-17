@@ -28,17 +28,17 @@ class Settings(tk.Toplevel):
         try:
             self.username_entry.insert(0, config["USER INFORMATION"]["username"])
             self.color_entry.insert(0, config["USER INFORMATION"]["color"])
-        except: pass
+        except:
+            pass
 
         Button(self, text="apply", width=20, command=self.save_input).grid(row=3, column=0, columnspan=2, pady=30)
-
 
     def save_input(self):
         config = configparser.ConfigParser()
 
         config["USER INFORMATION"] = {
-            "username" : self.username_entry.get(),
-            "color" : self.color_entry.get()
+            "username": self.username_entry.get(),
+            "color": self.color_entry.get()
         }
 
         with open('config.ini', 'w') as configfile:

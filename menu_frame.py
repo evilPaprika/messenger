@@ -42,7 +42,8 @@ class Menu(Frame):
         self.parent.forget(self.parent.select())
 
         if tab_index != len(self.parent.tabs()):        # нельзя сделать инсерт в конец вкладок
-            self.parent.insert(tab_index, chat_frame.Chat(self.parent, "connect", addres), text=self.connect_entry.get())
+            self.parent.insert(tab_index, chat_frame.Chat(self.parent, "connect", addres),
+                               text=self.connect_entry.get())
         else:
             self.parent.add(chat_frame.Chat(self.parent, "connect", addres), text=self.connect_entry.get())
 
@@ -59,7 +60,8 @@ class Menu(Frame):
         self.parent.forget(self.parent.select())
 
         if tab_index != len(self.parent.tabs()):        # нельзя сделать инсерт в конец вкладок
-            self.parent.insert(tab_index, chat_frame.Chat(self.parent, "host",  addres), text='{}:{}'.format(addres[0], addres[1]))
+            self.parent.insert(tab_index,
+                               chat_frame.Chat(self.parent, "host",  addres), text='{}:{}'.format(addres[0], addres[1]))
         else:
             self.parent.add(chat_frame.Chat(self.parent, "host", addres), text='{}:{}'.format(addres[0], addres[1]))
 

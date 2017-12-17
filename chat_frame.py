@@ -30,14 +30,13 @@ class Chat(Frame):
         else:
             self.client = Client(adress, self.chat_frame.add_message)
 
-
     def send_action(self):
         message_text = self.text_input.get("1.0", 'end-1c')
         if not message_text: return
-        self.text_input.delete("1.0", tk.END) # отчистка поля ввода
+        self.text_input.delete("1.0", tk.END)  # отчистка поля ввода
 
         self.config.read("config.ini")
-        self.client.send_data(self.config["USER INFORMATION"]["username"], message_text)
+        self.client.send_message(self.config["USER INFORMATION"]["username"], message_text)
 
 
 class ChatFrame(ScrolledText):
@@ -45,12 +44,11 @@ class ChatFrame(ScrolledText):
         ScrolledText.__init__(self, *args, **kwargs)
         self.config(bg="#e6ebf4")
         self.pack(expand=1, fill="both")
-        self.bind("<1>", lambda event: self.focus_set()) # разрешить копирование
+        self.bind("<1>", lambda event: self.focus_set())  # разрешить копирование
         self.configure(state="disabled")
 
         for color in ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'purple', 'pink']:
             self.tag_configure(color, foreground=color, font=("Courier", "11", "bold"))
-
 
     def add_message(self, nickname, message_text, color="green"):
         self.configure(state="normal")

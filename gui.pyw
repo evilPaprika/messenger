@@ -1,15 +1,14 @@
 from tkinter import *
 from tkinter import ttk
-from tkinter.scrolledtext import ScrolledText
-import socket
-import configparser
-import settings_popup
+
 import menu_frame
+import settings_popup
 
 
 class Window(Tk):
     """   главное окно GUI   """
-    def __init__(self, master=None):
+
+    def __init__(self):
         Tk.__init__(self)
         self.geometry("900x700")
         self.title("instant messaging client")
@@ -25,13 +24,11 @@ class Window(Tk):
         self.config(menu=menubar)
         self.create_new_tab()
 
-
     def create_new_tab(self):
         frame = menu_frame.Menu(self.notebook)
         self.frames[frame.winfo_name()] = frame
         self.notebook.add(frame, text="new tab")
-        self.notebook.select(len(self.notebook.tabs())-1)
-
+        self.notebook.select(len(self.notebook.tabs()) - 1)
 
     def close_current_tab(self):
         self.notebook.forget(self.notebook.select())
