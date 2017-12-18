@@ -13,16 +13,24 @@ class Chat(Frame):
         self.config = configparser.ConfigParser()
         self.config.read("config.ini")
         self.columnconfigure(0, weight=1)
+
         self.rowconfigure(0, weight=1)
 
-        self.chat_frame = ChatFrame(self)
+
+        self.chat_frame = MessagesFrame(self)
         self.chat_frame.grid(row=0, column=0, sticky='NSEW')
+
+        # self.columnconfigure(1, weight=1)
+        # self.grid_columnconfigure(1, minsize=150)
+        # self.side_panel = SidePanelFrame(self, width=50)
+        # self.side_panel.grid(row=0, column=1, sticky='NSEW')
 
         self.text_input = tk.Text(self, height=5)
         self.text_input.grid(row=1, column=0, columnspan=2, sticky='NSEW')
 
         btn = Button(self, text="Send", command=self.send_action)
         btn.grid(row=1, column=0, columnspan=2, sticky="NSE")
+        self.text_input.bind('<Return>', lambda x: self.send_action())
 
         if mode == "host":
             Server(adress)
@@ -32,14 +40,14 @@ class Chat(Frame):
 
     def send_action(self):
         message_text = self.text_input.get("1.0", 'end-1c')
-        if not message_text: return
         self.text_input.delete("1.0", tk.END)  # отчистка поля ввода
-
+        if not message_text: return 'break'
         self.config.read("config.ini")
         self.client.send_message(self.config["USER INFORMATION"]["username"], message_text)
+        return 'break'  # preventing Tkinter from propagating event to other handlers.
 
 
-class ChatFrame(ScrolledText):
+class MessagesFrame(ScrolledText):
     def __init__(self, *args, **kwargs):
         ScrolledText.__init__(self, *args, **kwargs)
         self.config(bg="#e6ebf4")
@@ -55,3 +63,9 @@ class ChatFrame(ScrolledText):
         self.insert(tk.END, nickname + ": ", color)
         self.insert(tk.END, message_text + "\n")
         self.configure(state="disabled")
+
+class SidePanelFrame(Frame):
+    def __init__(self, *args, **kwargs):
+        Frame.__init__(self, *args, **kwargs)
+        self.label = Label(self, text="test")
+        self.label.pack()

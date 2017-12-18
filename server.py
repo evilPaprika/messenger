@@ -36,7 +36,7 @@ class Server:
         while True:
             try:
                 data = connection.recv(1024)
-            except:
+            except socket.error:
                 self._send_system_message("client " + str(addres) + " has disconected")
                 self.connections.remove(connection)
                 break

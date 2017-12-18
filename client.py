@@ -25,15 +25,14 @@ class Client:
         try:
             self.sock.connect(self.server_adress)
             self.received_action("system", "connection successful", "blue")
-        except Exception as e:
+        except socket.error as e:
             self.received_action("system", "unable to connect", "blue")
-            print(e)
+            print("clent error: " + str(e))
             return
-
         while True:
             try:
                 data = self.sock.recv(1024)
-            except:
+            except socket.error:
                 self.received_action("system", "server has disconnected", "blue")
                 self.connections_list.sort(key=lambda tup: str(tup))
                 if len(self.connections_list) == 0 or self.connections_list[0] == self.sock.getsockname():
@@ -55,7 +54,7 @@ class Client:
                 self.handle_data(data)
 
     def handle_data(self, data):
-        print(data.decode())
+        # print(data.decode())
         messages = re.split('({[^}]*})', data.decode())[1::2]
         for message in messages:
             json_data = json.loads(message)
@@ -63,7 +62,7 @@ class Client:
                 if len(json_data["connections_list"]) == 0:
                     self.connections_list = []
                 else:
-                    self.connections_list = [tuple(l) for l in json.loads(data)["connections_list"]]
+                    self.connections_list = [tuple(l) for l in json_data["connections_list"]]
             else:
                 self.received_action(json_data["nickname"], json_data["text"], json_data["color"])
 
