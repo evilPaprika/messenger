@@ -24,9 +24,9 @@ class Client:
     def _receive_data(self):
         try:
             self.sock.connect(self.server_adress)
-            self.received_action(*("system", "connection successful", "blue"))
+            self.received_action("system", "connection successful", "blue")
         except Exception as e:
-            self.received_action(*("system", "unable to connect", "blue"))
+            self.received_action("system", "unable to connect", "blue")
             print(e)
             return
 
@@ -34,11 +34,12 @@ class Client:
             try:
                 data = self.sock.recv(1024)
             except:
-                self.received_action(*("system", "server has disconnected", "blue"))
+                self.received_action("system", "server has disconnected", "blue")
                 self.connections_list.sort(key=lambda tup: str(tup))
                 if len(self.connections_list) == 0 or self.connections_list[0] == self.sock.getsockname():
                     self.server_adress = ('127.0.0.1', 25000)
                     Server(self.server_adress)
+                    self.received_action("system", "you are now hosting server", "blue")
                 else:
                     self.server_adress = (self.connections_list[0][0], 25000)
                     time.sleep(1)
@@ -51,19 +52,20 @@ class Client:
                 break
 
             if data:
-                print(data.decode())
-                messages = re.split('({[^}]*})', data.decode())[1::2]
-                for message in messages:
-                    json_data = json.loads(message)
-                    if "connections_list" in json_data:
-                        if len(json_data["connections_list"]) == 0:
-                            self.connections_list = []
-                        else:
-                            self.connections_list = [tuple(l) for l in json.loads(data)["connections_list"]]
-                    else:
-                        self.received_action(json_data["nickname"], json_data["text"], json_data["color"])
+                self.handle_data(data)
 
-            print(self.connections_list)
+    def handle_data(self, data):
+        print(data.decode())
+        messages = re.split('({[^}]*})', data.decode())[1::2]
+        for message in messages:
+            json_data = json.loads(message)
+            if "connections_list" in json_data:
+                if len(json_data["connections_list"]) == 0:
+                    self.connections_list = []
+                else:
+                    self.connections_list = [tuple(l) for l in json.loads(data)["connections_list"]]
+            else:
+                self.received_action(json_data["nickname"], json_data["text"], json_data["color"])
 
     def send_message(self, name, text):
         self.sock.sendall(json.dumps({"nickname": name, "text": text, "color": "green"}).encode())

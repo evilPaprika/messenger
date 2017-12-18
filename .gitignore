@@ -98,3 +98,10 @@ ENV/
 
 # mypy
 .mypy_cache/
+*.pyc
+*.pyc
+*.xml
+.idea/workspace.xml
+.idea/workspace.xml
+__pycache__/client.cpython-36.pyc
+*.xml
