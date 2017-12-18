@@ -56,7 +56,7 @@ class Client:
                 for message in messages:
                     json_data = json.loads(message)
                     if "connections_list" in json_data:
-                        if len(json.loads(data)["connections_list"]) == 0:
+                        if len(json_data["connections_list"]) == 0:
                             self.connections_list = []
                         else:
                             self.connections_list = [tuple(l) for l in json.loads(data)["connections_list"]]

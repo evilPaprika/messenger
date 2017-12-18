@@ -41,7 +41,7 @@ class Server:
                 self.connections.remove(connection)
                 break
             if data:
-                self.messages.append(data)
+                self.messages.append(data.decode())
 
     def _send_to_all(self):
         while True:
@@ -49,15 +49,15 @@ class Server:
             if self.messages:
                 for message in self.messages[:]:
                     for connection in self.connections:
-                        connection.sendall(message)
+                        connection.sendall(message.encode())
                     self.messages.remove(message)
 
     def _send_system_message(self, text):
         self.messages.append(json.dumps(
             {"nickname": "system", "text": text,
-             "color": "blue"}).encode())
+             "color": "blue"}))
 
     def _send_connection_list(self):
         c_list = [c.getpeername() for c in self.connections][1:]
         self.messages.append(json.dumps(
-            {"connections_list": c_list}).encode())
+            {"connections_list": c_list}))
