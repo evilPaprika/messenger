@@ -23,7 +23,7 @@ class Client:
 
     def _receive_data(self):
         try:
-            self.sock.connect(('127.0.0.1', 25000))
+            self.sock.connect(self.server_adress)
             self.received_action("system", "connection successful", "blue")
         except socket.error as e:
             self.received_action("system", "unable to connect", "blue")
@@ -36,8 +36,8 @@ class Client:
                 self.received_action("system", "server has disconnected", "blue")
                 self.connections_list.sort(key=lambda tup: str(tup))
                 if len(self.connections_list) == 0 or self.connections_list[0] == self.sock.getsockname():
-                    self.server_adress = ('', 25000)
-                    Server(self.server_adress)
+                    Server(('', 25000))
+                    self.server_adress = ('127.0.0.1', 25000)
                     self.received_action("system", "you are now hosting server", "blue")
                 else:
                     self.server_adress = (self.connections_list[0][0], 25000)
