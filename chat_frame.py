@@ -34,7 +34,7 @@ class Chat(Frame):
 
         if mode == "host":
             Server(adress)
-            self.client = Client(adress, self.chat_frame.add_message)
+            self.client = Client(("127.0.0.1",25000), self.chat_frame.add_message)
         else:
             self.client = Client(adress, self.chat_frame.add_message)
 
