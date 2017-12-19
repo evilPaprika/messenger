@@ -11,7 +11,7 @@ from server import Server
 class Client:
     def __init__(self, adress, received_action):
         """
-        :param adress: например: '127.0.0.1:25000'
+        :param adress: например: '127.0.0.1'
         :param received_action: функция которая будет вызываться при получении сообщения
         """
         self.server_adress = adress
@@ -36,7 +36,7 @@ class Client:
                 self.received_action("system", "server has disconnected", "blue")
                 self.connections_list.sort(key=lambda tup: str(tup))
                 if len(self.connections_list) == 0 or self.connections_list[0] == self.sock.getsockname():
-                    self.server_adress = ('127.0.0.1', 25000)
+                    self.server_adress = ('', 25000)
                     Server(self.server_adress)
                     self.received_action("system", "you are now hosting server", "blue")
                 else:
