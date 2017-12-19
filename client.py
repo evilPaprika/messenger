@@ -23,7 +23,7 @@ class Client:
 
     def _receive_data(self):
         try:
-            self.sock.connect(self.server_adress)
+            self.sock.connect(('127.0.0.1', 25000))
             self.received_action("system", "connection successful", "blue")
         except socket.error as e:
             self.received_action("system", "unable to connect", "blue")
