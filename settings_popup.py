@@ -16,7 +16,7 @@ class Settings(tk.Toplevel):
 
         Label(self, text="your IP: " + socket.gethostbyname(socket.gethostname())).grid(columnspan=2, pady=(15, 25))
         Label(self, text="username: ").grid(row=1, sticky='E')
-        Label(self, text="color: ").grid(row=2, sticky='E')
+        # Label(self, text="color: ").grid(row=2, sticky='E')
 
         config = configparser.ConfigParser()
         config.read("config.ini")
