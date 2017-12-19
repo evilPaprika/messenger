@@ -54,7 +54,7 @@ class Menu(Frame):
 
 
     def host_action(self):
-        addres = ("127.0.0.1", 25000)
+        addres = ("", 25000)
         # try:
         #     addres = ("127.0.0.1", int(self.host_entry.get()))
         # except:
