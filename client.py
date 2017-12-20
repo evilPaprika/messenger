@@ -1,6 +1,7 @@
 import socket
 import json
 import re
+import ssl
 from threading import Thread
 
 import time
@@ -9,13 +10,16 @@ from server import Server
 
 
 class Client:
-    def __init__(self, adress, received_action):
+    def __init__(self, adress, received_action, start_new_server):
         """
         :param adress: например: '127.0.0.1'
         :param received_action: функция которая будет вызываться при получении сообщения
+        :param start_new_server: функция которая будет вызываться когда нужно создать новый сервер
         """
         self.server_adress = adress
         self.received_action = received_action
+        self._start_new_server = start_new_server
+        self._running = True
         self.sock = socket.socket()
         thread = Thread(target=self._receive_data)
         thread.daemon = True
@@ -29,14 +33,20 @@ class Client:
             self.received_action("system", "unable to connect", "blue")
             print("clent error: " + str(e))
             return
-        while True:
+        while self._running:
             try:
                 data = self.sock.recv(1024)
-            except socket.error:
+                if not data:
+                    raise socket.error
+                else:
+                    self.handle_data(data)
+            except socket.error as e:
+                print(e)
+                if not self._running: return
                 self.received_action("system", "server has disconnected", "blue")
                 self.connections_list.sort(key=lambda tup: str(tup))
                 if len(self.connections_list) == 0 or self.connections_list[0] == self.sock.getsockname():
-                    Server(('', 25000))
+                    self._start_new_server(('', 25000))
                     self.server_adress = ('127.0.0.1', 25000)
                     self.received_action("system", "you are now hosting server", "blue")
                 else:
@@ -49,9 +59,6 @@ class Client:
                 thread.daemon = True
                 thread.start()
                 break
-
-            if data:
-                self.handle_data(data)
 
     def handle_data(self, data):
         # print(data.decode())
@@ -68,3 +75,7 @@ class Client:
 
     def send_message(self, name, text):
         self.sock.sendall(json.dumps({"nickname": name, "text": text, "color": "green"}).encode())
+
+    def stop(self):
+        self._running = False
+        self.sock.close()

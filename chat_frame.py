@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter.ttk import *
 from tkinter.scrolledtext import ScrolledText
+import time
 from client import Client
 from server import Server
 import configparser
@@ -33,10 +34,11 @@ class Chat(Frame):
         self.text_input.bind('<Return>', lambda x: self.send_action())
 
         if mode == "host":
-            Server(adress)
-            self.client = Client(("127.0.0.1",25000), self.chat_frame.add_message)
-        else:
-            self.client = Client(adress, self.chat_frame.add_message)
+            self.server = Server(adress)
+            self.client = Client(("127.0.0.1",25000), self.chat_frame.add_message, self.start_new_server)
+        elif mode == "connect":
+            self.server = None
+            self.client = Client(adress, self.chat_frame.add_message, self.start_new_server)
 
     def send_action(self):
         message_text = self.text_input.get("1.0", 'end-1c')
@@ -45,6 +47,15 @@ class Chat(Frame):
         self.config.read("config.ini")
         self.client.send_message(self.config["USER INFORMATION"]["username"], message_text)
         return 'break'  # preventing Tkinter from propagating event to other handlers.
+
+    def close(self):
+        self.client.stop()
+        time.sleep(0.1)
+        if self.server:
+            self.server.stop()
+
+    def start_new_server(self, address):
+        self.server = Server(address)
 
 
 class MessagesFrame(ScrolledText):
@@ -63,6 +74,7 @@ class MessagesFrame(ScrolledText):
         self.insert(tk.END, nickname + ": ", color)
         self.insert(tk.END, message_text + "\n")
         self.configure(state="disabled")
+
 
 class SidePanelFrame(Frame):
     def __init__(self, *args, **kwargs):

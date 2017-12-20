@@ -1,8 +1,11 @@
 from tkinter import *
 from tkinter import ttk
 
+import gc
+
 import menu_frame
 import settings_popup
+from chat_frame import Chat
 
 
 class Window(Tk):
@@ -25,14 +28,28 @@ class Window(Tk):
         self.create_new_tab()
 
     def create_new_tab(self):
-        frame = menu_frame.Menu(self.notebook)
-        self.frames[frame.winfo_name()] = frame
+        frame = menu_frame.Menu(self)
         self.notebook.add(frame, text="new tab")
         self.notebook.select(len(self.notebook.tabs()) - 1)
 
     def close_current_tab(self):
+        if len(self.notebook.tabs()) == 0: return
+        tab_index = self.notebook.index(self.notebook.select())
+        if tab_index in self.frames:
+            self.frames[tab_index].close()
+            self.frames.pop(tab_index)
         self.notebook.forget(self.notebook.select())
 
+    def update_tab(self, frame, new_text):
+        tab_index = self.notebook.index(self.notebook.select())
+        if isinstance(frame, Chat):
+            self.frames[tab_index] = frame
+        self.notebook.forget(self.notebook.select())
+        if tab_index != len(self.notebook.tabs()):        # нельзя сделать инсерт в конец вкладок
+            self.notebook.insert(tab_index, frame, text=new_text)
+        else:
+            self.notebook.add(frame, text=new_text)
+            self.notebook.select(tab_index)
 
 if __name__ == '__main__':
     app = Window()
