@@ -1,3 +1,4 @@
+import configparser
 from tkinter import *
 from tkinter import ttk
 
@@ -24,6 +25,13 @@ class Window(Tk):
         menubar.add_command(label="new tab", command=self.create_new_tab)
         menubar.add_command(label="close current tab", command=self.close_current_tab)
         menubar.add_command(label="settings", command=settings_popup.Settings)
+
+        cascade = Menu(self)
+        menubar.add_cascade(label="status", menu=cascade)
+        cascade.add_command(label="available", command=lambda: self.set_status("available"))
+        cascade.add_command(label="away", command=lambda: self.set_status("away"))
+        cascade.add_command(label="do not disturb", command=lambda: self.set_status("do not disturb"))
+
         self.config(menu=menubar)
         self.create_new_tab()
 
@@ -50,6 +58,13 @@ class Window(Tk):
         else:
             self.notebook.add(frame, text=new_text)
             self.notebook.select(tab_index)
+
+    def set_status(self, status):
+        config = configparser.ConfigParser()
+        config.read("config.ini")
+        config.set("USER INFORMATION", "status", status)
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
 
 if __name__ == '__main__':
     app = Window()

@@ -1,3 +1,4 @@
+import configparser
 import socket
 import json
 import re
@@ -5,6 +6,8 @@ import ssl
 from threading import Thread
 
 import time
+
+import os
 
 from server import Server
 
@@ -19,9 +22,13 @@ class Client:
         self.server_adress = adress
         self.received_action = received_action
         self._start_new_server = start_new_server
+        self.connections_list = []
         self._running = True
         self.sock = socket.socket()
         thread = Thread(target=self._receive_data)
+        thread.daemon = True
+        thread.start()
+        thread = Thread(target=self._send_description)
         thread.daemon = True
         thread.start()
 
@@ -75,6 +82,20 @@ class Client:
 
     def send_message(self, name, text):
         self.sock.sendall(json.dumps({"nickname": name, "text": text, "color": "green"}).encode())
+
+    def _send_description(self):
+        last_modified = 0
+        while self._running:
+            modified = os.path.getmtime("config.ini")
+            if last_modified < modified:
+                config = configparser.ConfigParser()
+                config.read("config.ini")
+                name = config.get("USER INFORMATION", "username")
+                color = config.get("USER INFORMATION", "color")
+                status = config.get("USER INFORMATION", "status")
+                self.sock.sendall(json.dumps({"userdata": {"username": name, "color": color, "status": status}}).encode())
+                last_modified = modified
+            time.sleep(1)
 
     def stop(self):
         self._running = False

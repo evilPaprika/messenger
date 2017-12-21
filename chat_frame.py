@@ -21,10 +21,10 @@ class Chat(Frame):
         self.chat_frame = MessagesFrame(self)
         self.chat_frame.grid(row=0, column=0, sticky='NSEW')
 
-        # self.columnconfigure(1, weight=1)
-        # self.grid_columnconfigure(1, minsize=150)
-        # self.side_panel = SidePanelFrame(self, width=50)
-        # self.side_panel.grid(row=0, column=1, sticky='NSEW')
+        self.columnconfigure(1, weight=1)
+        self.grid_columnconfigure(1, minsize=150)
+        self.side_panel = SidePanelFrame(self, width=50)
+        self.side_panel.grid(row=0, column=1, sticky='NSEW')
 
         self.text_input = tk.Text(self, height=5)
         self.text_input.grid(row=1, column=0, columnspan=2, sticky='NSEW')
@@ -79,5 +79,20 @@ class MessagesFrame(ScrolledText):
 class SidePanelFrame(Frame):
     def __init__(self, *args, **kwargs):
         Frame.__init__(self, *args, **kwargs)
-        self.label = Label(self, text="test")
+        self._running = True
+        self.label = Label(self, text="users:")
+        self.label1 = Label(self, text="1")
+        self.label2 = Label(self, text="2")
+        self.label3 = Label(self, text="3")
+
         self.label.pack()
+        self.label1.pack()
+        self.label2.pack()
+        self.label3.pack()
+        self.label1.configure(text="")
+
+    def update(self):
+        pass
+
+    def stop(self):
+        self._running = False

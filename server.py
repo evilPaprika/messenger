@@ -4,6 +4,8 @@ import ssl
 from threading import Thread
 import time
 
+import re
+
 
 class Server:
     def __init__(self, server_address):
@@ -13,24 +15,24 @@ class Server:
         self.address = server_address
         self.sock = socket.socket()
         self.sock.bind(self.address)
-        self.connections = []
+        self.connections = {}
         self.messages = []
         self._running = True
         self.sock.listen(32)
 
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        thread = Thread(target=self.waiting_for_connections)
+        thread = Thread(target=self._waiting_for_connections)
         thread.daemon = True
         thread.start()
         thread = Thread(target=self._send_to_all)
         thread.daemon = True
         thread.start()
 
-    def waiting_for_connections(self):
+    def _waiting_for_connections(self):
         while self._running:
             try:
                 connection, addres = self.sock.accept()
-                self.connections.append(connection)
+                self.connections.update({connection: None})
                 self._send_connection_list()
                 self._send_system_message("new connection established with " + str(addres))
                 thread = Thread(target=self.receive_data, args=[connection, addres])
@@ -48,17 +50,23 @@ class Server:
                 data = connection.recv(1024)
             except socket.error:
                 self._send_system_message("client " + str(addres) + " has disconected")
-                self.connections.remove(connection)
+                self.connections.pop(connection)
                 break
             if data:
-                self.messages.append(data.decode())
+                # messages = re.split('({[^}]*})', data.decode())[1::2]
+                messages = data.decode().split("}{")
+                for message in messages:
+                    json_data = json.loads(message)
+                    if "userdata" in json_data:
+                        self.connections[connection] = json_data['userdata']
+                    else: self.messages.append(message)
 
     def _send_to_all(self):
         while self._running:
             time.sleep(0.01)
             if self.messages:
                 for message in self.messages[:]:
-                    for connection in self.connections:
+                    for connection in self.connections.keys():
                         connection.sendall(message.encode())
                     self.messages.remove(message)
 
@@ -68,17 +76,19 @@ class Server:
              "color": "blue"}))
 
     def _send_connection_list(self):
-        c_list = [c.getpeername() for c in self.connections][1:]
+        c_list = [c.getpeername() for c in self.connections.keys()][1:]
         self.messages.append(json.dumps(
             {"connections_list": c_list}))
 
     def stop(self):
         self._running = False
-        time.sleep(0.2)
-        for connection in self.connections:
+        for connection in self.connections.keys():
             connection.shutdown(socket.SHUT_RDWR)
             connection.close()
         self.sock.close()
 
-    def encrypt(self):
+    def _encrypt(self):
+        pass
+
+    def _decrypt(self):
         pass

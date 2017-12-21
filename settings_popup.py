@@ -20,6 +20,8 @@ class Settings(tk.Toplevel):
 
         config = configparser.ConfigParser()
         config.read("config.ini")
+        config.set
+
 
         self.username_entry = Entry(self)
         self.username_entry.grid(row=1, column=1, sticky='W')
