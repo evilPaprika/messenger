@@ -16,6 +16,7 @@ class Server:
         self.sock = socket.socket()
         self.sock.bind(self.address)
         self.connections = {}
+        self._main_client = None
         self.messages = []
         self._running = True
         self.sock.listen(32)
@@ -32,6 +33,8 @@ class Server:
         while self._running:
             try:
                 connection, addres = self.sock.accept()
+                if not self._main_client:
+                    self._main_client = addres
                 self.connections.update({connection: None})
                 self._send_connection_list()
                 self._send_system_message("new connection established with " + str(addres))
@@ -76,7 +79,7 @@ class Server:
              "color": "blue"}))
 
     def _send_connection_list(self):
-        c_list = [c.getpeername() for c in self.connections.keys()][1:]
+        c_list = [c.getpeername() for c in self.connections.keys() if c.getpeername() != self._main_client]
         self.messages.append(json.dumps(
             {"connections_list": c_list}))
 

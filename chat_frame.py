@@ -17,7 +17,6 @@ class Chat(Frame):
 
         self.rowconfigure(0, weight=1)
 
-
         self.chat_frame = MessagesFrame(self)
         self.chat_frame.grid(row=0, column=0, sticky='NSEW')
 
@@ -35,10 +34,10 @@ class Chat(Frame):
 
         if mode == "host":
             self.server = Server(adress)
-            self.client = Client(("127.0.0.1",25000), self.chat_frame.add_message, self.start_new_server)
+            self.client = Client(("127.0.0.1",25000), self.chat_frame.display_message, self.start_new_server)
         elif mode == "connect":
             self.server = None
-            self.client = Client(adress, self.chat_frame.add_message, self.start_new_server)
+            self.client = Client(adress, self.chat_frame.display_message, self.start_new_server)
 
     def send_action(self):
         message_text = self.text_input.get("1.0", 'end-1c')
@@ -69,7 +68,7 @@ class MessagesFrame(ScrolledText):
         for color in ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'purple', 'pink']:
             self.tag_configure(color, foreground=color, font=("Courier", "11", "bold"))
 
-    def add_message(self, nickname, message_text, color="green"):
+    def display_message(self, nickname, message_text, color="green"):
         self.configure(state="normal")
         self.insert(tk.END, nickname + ": ", color)
         self.insert(tk.END, message_text + "\n")

@@ -13,14 +13,14 @@ from server import Server
 
 
 class Client:
-    def __init__(self, adress, received_action, start_new_server):
+    def __init__(self, adress, display_message, start_new_server):
         """
         :param adress: например: '127.0.0.1'
         :param received_action: функция которая будет вызываться при получении сообщения
         :param start_new_server: функция которая будет вызываться когда нужно создать новый сервер
         """
         self.server_adress = adress
-        self.received_action = received_action
+        self.display_message = display_message
         self._start_new_server = start_new_server
         self.connections_list = []
         self._running = True
@@ -28,16 +28,16 @@ class Client:
         thread = Thread(target=self._receive_data)
         thread.daemon = True
         thread.start()
-        thread = Thread(target=self._send_description)
-        thread.daemon = True
-        thread.start()
 
     def _receive_data(self):
         try:
             self.sock.connect(self.server_adress)
-            self.received_action("system", "connection successful", "blue")
+            self.display_message("system", "connection successful", "blue")
+            thread = Thread(target=self._send_description)
+            thread.daemon = True
+            thread.start()
         except socket.error as e:
-            self.received_action("system", "unable to connect", "blue")
+            self.display_message("system", "unable to connect", "blue")
             print("clent error: " + str(e))
             return
         while self._running:
@@ -50,12 +50,12 @@ class Client:
             except socket.error as e:
                 print(e)
                 if not self._running: return
-                self.received_action("system", "server has disconnected", "blue")
+                self.display_message("system", "server has disconnected", "blue")
                 self.connections_list.sort(key=lambda tup: str(tup))
-                if len(self.connections_list) == 0 or self.connections_list[0] == self.sock.getsockname():
+                if self.connections_list[0] == self.sock.getsockname():
                     self._start_new_server(('', 25000))
                     self.server_adress = ('127.0.0.1', 25000)
-                    self.received_action("system", "you are now hosting server", "blue")
+                    self.display_message("system", "you are now hosting server", "blue")
                 else:
                     self.server_adress = (self.connections_list[0][0], 25000)
                     time.sleep(1)
@@ -78,23 +78,26 @@ class Client:
                 else:
                     self.connections_list = [tuple(l) for l in json_data["connections_list"]]
             else:
-                self.received_action(json_data["nickname"], json_data["text"], json_data["color"])
+                self.display_message(json_data["nickname"], json_data["text"], json_data["color"])
 
     def send_message(self, name, text):
-        self.sock.sendall(json.dumps({"nickname": name, "text": text, "color": "green"}).encode())
+        config = configparser.ConfigParser()
+        config.read("config.ini")
+        self.sock.sendall(json.dumps({"nickname":  config.get("USER INFORMATION", "username"), "text": text, "color": config.get("USER INFORMATION", "color")}).encode())
 
     def _send_description(self):
-        last_modified = 0
+        prev_modified = 0
         while self._running:
             modified = os.path.getmtime("config.ini")
-            if last_modified < modified:
+            if prev_modified < modified:
+                print(modified)
                 config = configparser.ConfigParser()
                 config.read("config.ini")
                 name = config.get("USER INFORMATION", "username")
                 color = config.get("USER INFORMATION", "color")
                 status = config.get("USER INFORMATION", "status")
                 self.sock.sendall(json.dumps({"userdata": {"username": name, "color": color, "status": status}}).encode())
-                last_modified = modified
+                prev_modified = modified
             time.sleep(1)
 
     def stop(self):
