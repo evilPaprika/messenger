@@ -91,7 +91,7 @@ class Server:
 
     def stop(self):
         self._running = False
-        for connection in self.connections.keys():
+        for connection in list(self.connections.keys()):
             connection.shutdown(socket.SHUT_RDWR)
             connection.close()
         self.sock.close()

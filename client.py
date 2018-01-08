@@ -43,7 +43,7 @@ class Client:
                     raise socket.error
                 else:
                     self._handle_data(data)
-            except socket.error as e:
+            except socket.error:
                 if not self._running:
                     return
                 self.display_message("system", "server has disconnected", "blue")
