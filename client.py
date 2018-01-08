@@ -23,6 +23,8 @@ class Client:
         self.display_message = display_message
         self._start_new_server = start_new_server
         self.connections_list = []
+        self.connections_info = []
+        self.has_new_connections_info = True
         self._running = True
         self.sock = socket.socket()
         thread = Thread(target=self._receive_data)
@@ -69,7 +71,9 @@ class Client:
 
     def handle_data(self, data):
         # print(data.decode())
-        messages = re.split('({[^}]*})', data.decode())[1::2]
+        messages = data.decode().split("}{")
+        if len(messages) > 1:
+            messages = [messages[0] + "}"] + ["{" + i + "}" for i in messages[1:-1]] + ["{" + messages[-1]]
         for message in messages:
             json_data = json.loads(message)
             if "connections_list" in json_data:
@@ -77,20 +81,23 @@ class Client:
                     self.connections_list = []
                 else:
                     self.connections_list = [tuple(l) for l in json_data["connections_list"]]
+            elif "users_data" in json_data:
+                self.connections_info = list(json_data["users_data"])
+                self.has_new_connections_info = True
             else:
-                self.display_message(json_data["nickname"], json_data["text"], json_data["color"])
+                self.display_message(json_data["username"], json_data["text"], json_data["color"])
 
     def send_message(self, name, text):
         config = configparser.ConfigParser()
         config.read("config.ini")
-        self.sock.sendall(json.dumps({"nickname":  config.get("USER INFORMATION", "username"), "text": text, "color": config.get("USER INFORMATION", "color")}).encode())
+        self.sock.sendall(json.dumps({"username":  config.get("USER INFORMATION", "username"),
+                                      "text": text, "color": config.get("USER INFORMATION", "color")}).encode())
 
     def _send_description(self):
         prev_modified = 0
         while self._running:
             modified = os.path.getmtime("config.ini")
             if prev_modified < modified:
-                print(modified)
                 config = configparser.ConfigParser()
                 config.read("config.ini")
                 name = config.get("USER INFORMATION", "username")

@@ -1,4 +1,5 @@
 import tkinter as tk
+from threading import Thread
 from tkinter.ttk import *
 from tkinter.scrolledtext import ScrolledText
 import time
@@ -22,24 +23,26 @@ class Chat(Frame):
 
         self.columnconfigure(1, weight=1)
         self.grid_columnconfigure(1, minsize=150)
-        self.side_panel = SidePanelFrame(self, width=50)
-        self.side_panel.grid(row=0, column=1, sticky='NSEW')
+
 
         self.text_input = tk.Text(self, height=5)
         self.text_input.grid(row=1, column=0, columnspan=2, sticky='NSEW')
 
-        btn = Button(self, text="Send", command=self.send_action)
+        btn = Button(self, text="Send", command=self._send_action)
         btn.grid(row=1, column=0, columnspan=2, sticky="NSE")
-        self.text_input.bind('<Return>', lambda x: self.send_action())
+        self.text_input.bind('<Return>', lambda x: self._send_action())
 
         if mode == "host":
             self.server = Server(adress)
-            self.client = Client(("127.0.0.1",25000), self.chat_frame.display_message, self.start_new_server)
+            self.client = Client(("127.0.0.1", 25000), self.chat_frame.display_message, self.start_new_server)
         elif mode == "connect":
             self.server = None
             self.client = Client(adress, self.chat_frame.display_message, self.start_new_server)
+        print(self.client)
+        self.side_panel = SidePanelFrame(self.client, self, width=50)
+        self.side_panel.grid(row=0, column=1, sticky='NSEW')
 
-    def send_action(self):
+    def _send_action(self):
         message_text = self.text_input.get("1.0", 'end-1c')
         self.text_input.delete("1.0", tk.END)  # отчистка поля ввода
         if not message_text: return 'break'
@@ -48,6 +51,7 @@ class Chat(Frame):
         return 'break'  # preventing Tkinter from propagating event to other handlers.
 
     def close(self):
+        self.side_panel.stop()
         self.client.stop()
         time.sleep(0.1)
         if self.server:
@@ -76,22 +80,29 @@ class MessagesFrame(ScrolledText):
 
 
 class SidePanelFrame(Frame):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, client, *args, **kwargs):
         Frame.__init__(self, *args, **kwargs)
         self._running = True
-        self.label = Label(self, text="users:")
-        self.label1 = Label(self, text="1")
-        self.label2 = Label(self, text="2")
-        self.label3 = Label(self, text="3")
-
-        self.label.pack()
-        self.label1.pack()
-        self.label2.pack()
-        self.label3.pack()
-        self.label1.configure(text="")
+        self.client = client
+        self.labels = []
+        thread = Thread(target=self.update)
+        thread.daemon = True
+        thread.start()
 
     def update(self):
-        pass
+        while self._running:
+            time.sleep(1)
+            if not self.client.has_new_connections_info:
+                continue
+            self.client.has_new_connections_info = False
+            for widget in self.winfo_children():
+                widget.destroy()
+            self.label = Label(self, text="users:")
+            self.label.pack(pady=5)
+            for user in self.client.connections_info:
+                lbl = Label(self, text=(user["username"] + " :  " + user["status"]), font='Helvetica 10 bold')
+                lbl.pack(pady=2)
+                self.labels.append(lbl)
 
     def stop(self):
         self._running = False
