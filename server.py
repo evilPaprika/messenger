@@ -7,7 +7,7 @@ import time
 class Server:
     def __init__(self, server_address):
         """
-        :param server_address: например: '127.0.0.1:25000'
+        :param server_address: например: ('127.0.0.1', 25000)
         """
         self.address = server_address
         self.sock = socket.socket()
@@ -29,13 +29,13 @@ class Server:
     def _waiting_for_connections(self):
         while self._running:
             try:
-                connection, addres = self.sock.accept()
+                connection, address = self.sock.accept()
                 if not self._main_client:
-                    self._main_client = addres
+                    self._main_client = address
                 self.connections.update({connection: json.loads(connection.recv(1024).decode())['userdata']})
                 self._send_current_connections()
-                self._send_system_message("new connection established with " + str(addres))
-                thread = Thread(target=self.receive_data, args=[connection, addres])
+                self._send_system_message("new connection established with " + str(address))
+                thread = Thread(target=self.receive_data, args=[connection, address])
                 thread.daemon = True
                 thread.start()
             except socket.error as e:
@@ -44,12 +44,12 @@ class Server:
                 print("error: seems like you are not connected to the internet")
                 print(e)
 
-    def receive_data(self, connection, addres):
+    def receive_data(self, connection, address):
         while self._running:
             try:
                 data = connection.recv(1024)
             except socket.error:
-                self._send_system_message("client " + str(addres) + " has disconected")
+                self._send_system_message("client " + str(address) + " has disconnected")
                 self.connections.pop(connection)
                 self._send_current_connections()
                 break
@@ -58,12 +58,15 @@ class Server:
                 if len(messages) > 1:
                     messages = [messages[0] + "}"] + ["{" + i + "}" for i in messages[1:-1]] + ["{" + messages[-1]]
                 for message in messages:
-                    json_data = json.loads(message)
-                    if "userdata" in json_data:
-                        self.connections[connection] = json_data['userdata']
-                        self._send_current_connections()
-                    else: self.messages.append(message)
-                # self.messages.append(data.decode())
+                    self._handle_message(message, connection)
+
+    def _handle_message(self, message, connection):
+        json_data = json.loads(message)
+        if "userdata" in json_data:
+            self.connections[connection] = json_data['userdata']
+            self._send_current_connections()
+        else:
+            self.messages.append(message)
 
     def _send_to_all(self):
         while self._running:

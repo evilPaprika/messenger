@@ -1,25 +1,19 @@
 import configparser
 import socket
 import json
-import re
-import ssl
 from threading import Thread
-
 import time
-
 import os
-
-from server import Server
 
 
 class Client:
-    def __init__(self, adress, display_message, start_new_server):
+    def __init__(self, address, display_message, start_new_server):
         """
-        :param adress: например: '127.0.0.1'
-        :param received_action: функция которая будет вызываться при получении сообщения
+        :param address: адресс сервера, например: ('127.0.0.1' , 25000)
+        :param display_message: функция которая будет вызываться при получении сообщения
         :param start_new_server: функция которая будет вызываться когда нужно создать новый сервер
         """
-        self.server_adress = adress
+        self.server_address = address
         self.display_message = display_message
         self._start_new_server = start_new_server
         self.connections_list = []
@@ -33,7 +27,7 @@ class Client:
 
     def _receive_data(self):
         try:
-            self.sock.connect(self.server_adress)
+            self.sock.connect(self.server_address)
             self.display_message("system", "connection successful", "blue")
             thread = Thread(target=self._send_description)
             thread.daemon = True
@@ -48,52 +42,60 @@ class Client:
                 if not data:
                     raise socket.error
                 else:
-                    self.handle_data(data)
+                    self._handle_data(data)
             except socket.error as e:
-                print(e)
-                if not self._running: return
+                if not self._running:
+                    return
                 self.display_message("system", "server has disconnected", "blue")
-                self.connections_list.sort(key=lambda tup: str(tup))
-                if self.connections_list[0] == self.sock.getsockname():
-                    self._start_new_server(('', 25000))
-                    self.server_adress = ('127.0.0.1', 25000)
-                    self.display_message("system", "you are now hosting server", "blue")
-                else:
-                    self.server_adress = (self.connections_list[0][0], 25000)
-                    time.sleep(1)
-
-                self.sock.close()
-                self.sock = socket.socket()
-                thread = Thread(target=self._receive_data)
-                thread.daemon = True
-                thread.start()
+                self._handle_server_down()
                 break
 
-    def handle_data(self, data):
-        # print(data.decode())
-        messages = data.decode().split("}{")
+    def _handle_data(self, data):
+        # данные в посылаются в формате json
+        messages = data.decode().split("}{") # разделение пакетов json
         if len(messages) > 1:
             messages = [messages[0] + "}"] + ["{" + i + "}" for i in messages[1:-1]] + ["{" + messages[-1]]
         for message in messages:
-            json_data = json.loads(message)
-            if "connections_list" in json_data:
-                if len(json_data["connections_list"]) == 0:
-                    self.connections_list = []
-                else:
-                    self.connections_list = [tuple(l) for l in json_data["connections_list"]]
-            elif "users_data" in json_data:
-                self.connections_info = list(json_data["users_data"])
-                self.has_new_connections_info = True
-            else:
-                self.display_message(json_data["username"], json_data["text"], json_data["color"])
+            self._handle_message(message)
 
-    def send_message(self, name, text):
+    def send_message(self, name, text, color):
         config = configparser.ConfigParser()
         config.read("config.ini")
-        self.sock.sendall(json.dumps({"username":  config.get("USER INFORMATION", "username"),
-                                      "text": text, "color": config.get("USER INFORMATION", "color")}).encode())
+        self.sock.sendall(json.dumps({"username":  name,
+                                      "text": text, "color": color}).encode())
+
+    def _handle_message(self, message):
+        json_data = json.loads(message)
+        if "connections_list" in json_data:
+            if len(json_data["connections_list"]) == 0:
+                self.connections_list = []
+            else:
+                self.connections_list = [tuple(l) for l in json_data["connections_list"]]
+        elif "users_data" in json_data:
+            self.connections_info = list(json_data["users_data"])
+            self.has_new_connections_info = True
+        else:
+            self.display_message(json_data["username"], json_data["text"], json_data["color"])
+
+    def _handle_server_down(self):
+        # обработка отключения сервера, выбор клиента создающеко новый сервер
+        self.connections_list.sort(key=lambda tup: str(tup))
+        if self.connections_list[0] == self.sock.getsockname():
+            self._start_new_server(('', 25000))
+            self.server_address = ('127.0.0.1', 25000)
+            self.display_message("system", "you are now hosting server", "blue")
+        else:
+            self.server_address = (self.connections_list[0][0], 25000)
+            time.sleep(1)
+
+        self.sock.close()
+        self.sock = socket.socket()
+        thread = Thread(target=self._receive_data)
+        thread.daemon = True
+        thread.start()
 
     def _send_description(self):
+        # отправляет описание пользователя, когда требуется
         prev_modified = 0
         while self._running:
             modified = os.path.getmtime("config.ini")
@@ -103,10 +105,17 @@ class Client:
                 name = config.get("USER INFORMATION", "username")
                 color = config.get("USER INFORMATION", "color")
                 status = config.get("USER INFORMATION", "status")
-                self.sock.sendall(json.dumps({"userdata": {"username": name, "color": color, "status": status}}).encode())
+                self.sock.sendall(
+                    json.dumps({"userdata": {"username": name, "color": color, "status": status}}).encode())
                 prev_modified = modified
             time.sleep(1)
 
     def stop(self):
         self._running = False
         self.sock.close()
+
+    def _encrypt(self):
+        pass
+
+    def _decrypt(self):
+        pass

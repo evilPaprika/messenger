@@ -4,9 +4,11 @@ import socket
 import configparser
 
 
-# Всплывающее окно с настройками
-# Ввод сохраняется в config.ini
 class Settings(tk.Toplevel):
+    """
+    Всплывающее окно с настройками
+    Ввод сохраняется в config.ini
+    """
     def __init__(self):
         super().__init__()
         self.title("settings")
@@ -25,11 +27,9 @@ class Settings(tk.Toplevel):
         self.username_entry.grid(row=1, column=1, sticky='W')
         self.color_entry = Entry(self)
         self.color_entry.grid(row=2, column=1, sticky='W')
-        try:
-            self.username_entry.insert(0, self.config["USER INFORMATION"]["username"])
-            self.color_entry.insert(0, self.config["USER INFORMATION"]["color"])
-        except:
-            pass
+
+        self.username_entry.insert(0, self.config["USER INFORMATION"]["username"])
+        self.color_entry.insert(0, self.config["USER INFORMATION"]["color"])
 
         Button(self, text="apply", width=20, command=self.save_input).grid(row=3, column=0, columnspan=2, pady=30)
 

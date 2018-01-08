@@ -1,9 +1,6 @@
 import configparser
 from tkinter import *
 from tkinter import ttk
-
-import gc
-
 import menu_frame
 import settings_popup
 from chat_frame import Chat
@@ -11,7 +8,6 @@ from chat_frame import Chat
 
 class Window(Tk):
     """   главное окно GUI   """
-
     def __init__(self):
         Tk.__init__(self)
         self.geometry("900x700")
@@ -41,7 +37,8 @@ class Window(Tk):
         self.notebook.select(len(self.notebook.tabs()) - 1)
 
     def close_current_tab(self):
-        if len(self.notebook.tabs()) == 0: return
+        if len(self.notebook.tabs()) == 0:
+            return
         tab_index = self.notebook.index(self.notebook.select())
         if tab_index in self.frames:
             self.frames[tab_index].close()

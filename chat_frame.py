@@ -9,45 +9,39 @@ import configparser
 
 
 class Chat(Frame):
-    def __init__(self, parent, mode, adress):
+    def __init__(self, parent, mode, address):
         Frame.__init__(self, parent)
         self.parent = parent
         self.config = configparser.ConfigParser()
         self.config.read("config.ini")
         self.columnconfigure(0, weight=1)
-
         self.rowconfigure(0, weight=1)
-
         self.chat_frame = MessagesFrame(self)
         self.chat_frame.grid(row=0, column=0, sticky='NSEW')
-
         self.columnconfigure(1, weight=1)
         self.grid_columnconfigure(1, minsize=150)
-
-
         self.text_input = tk.Text(self, height=5)
         self.text_input.grid(row=1, column=0, columnspan=2, sticky='NSEW')
-
         btn = Button(self, text="Send", command=self._send_action)
         btn.grid(row=1, column=0, columnspan=2, sticky="NSE")
         self.text_input.bind('<Return>', lambda x: self._send_action())
-
         if mode == "host":
-            self.server = Server(adress)
+            self.server = Server(address)
             self.client = Client(("127.0.0.1", 25000), self.chat_frame.display_message, self.start_new_server)
         elif mode == "connect":
             self.server = None
-            self.client = Client(adress, self.chat_frame.display_message, self.start_new_server)
-        print(self.client)
+            self.client = Client(address, self.chat_frame.display_message, self.start_new_server)
         self.side_panel = SidePanelFrame(self.client, self, width=50)
         self.side_panel.grid(row=0, column=1, sticky='NSEW')
 
     def _send_action(self):
         message_text = self.text_input.get("1.0", 'end-1c')
         self.text_input.delete("1.0", tk.END)  # отчистка поля ввода
-        if not message_text: return 'break'
+        if not message_text:
+            return 'break'
         self.config.read("config.ini")
-        self.client.send_message(self.config["USER INFORMATION"]["username"], message_text)
+        self.client.send_message(self.config["USER INFORMATION"]["username"], message_text,
+                                 self.config.get("USER INFORMATION", "color"))
         return 'break'  # preventing Tkinter from propagating event to other handlers.
 
     def close(self):
