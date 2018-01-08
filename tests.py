@@ -5,83 +5,65 @@ from server import Server
 
 
 class TestMessenger(unittest.TestCase):
+    def set_to_default(self):
+        self.received_message = ""
+        self.received_message = ""
+        self.received_message = ""
+
+    def receive(self, name, text, color):
+        self.received_name = name
+        self.received_message = text
+        self.received_color = color
+
     def test_send_message_to_self(self):
-        received_message = ""
-        received_name = ""
-        received_color = ""
-        def receive(name, text, color):
-            nonlocal received_message
-            nonlocal received_name
-            nonlocal received_color
-            received_name = name
-            received_message = text
-            received_color = color
+        self.set_to_default()
         server = Server(('127.0.0.1', 25000))
-        client = Client(('127.0.0.1', 25000), receive, None)
+        client = Client(('127.0.0.1', 25000), self.receive, None)
         time.sleep(0.2)
         client.send_message("test", "Hello", "red")
         time.sleep(0.2)
-        self.assertEqual("Hello", received_message)
-        self.assertEqual("test", received_name)
-        self.assertEqual("red", received_color)
+        self.assertEqual("Hello", self.received_message)
+        self.assertEqual("test", self.received_name)
+        self.assertEqual("red", self.received_color)
         client.stop()
-        time.sleep(0.1)
-        server.stop()
         time.sleep(0.2)
+        server.stop()
 
     def test_send_message_to_another(self):
-        received_message = ""
-        received_name = ""
-        received_color = ""
-        def receive(name, text, color):
-            nonlocal received_message
-            nonlocal received_name
-            nonlocal received_color
-            received_name = name
-            received_message = text
-            received_color = color
+        self.set_to_default()
         server = Server(('127.0.0.1', 25000))
         client1 = Client(('127.0.0.1', 25000), lambda x, y, z: None, None)
-        client2 = Client(('127.0.0.1', 25000), receive, None)
+        client2 = Client(('127.0.0.1', 25000), self.receive, None)
         time.sleep(0.2)
         client1.send_message("test", "Hello", "red")
         time.sleep(0.2)
-        self.assertEqual("Hello", received_message)
-        self.assertEqual("test", received_name)
-        self.assertEqual("red", received_color)
+        self.assertEqual("Hello", self.received_message)
+        self.assertEqual("test", self.received_name)
+        self.assertEqual("red", self.received_color)
         client1.stop()
         client2.stop()
-        time.sleep(0.1)
+        time.sleep(0.2)
         server.stop()
 
     def test_decentralisation(self):
-        received_message = ""
-        received_name = ""
-        received_color = ""
-        def receive(name, text, color):
-            nonlocal received_message
-            nonlocal received_name
-            nonlocal received_color
-            received_name = name
-            received_message = text
-            received_color = color
+        self.set_to_default()
         def create_new_server(address):
             nonlocal server
             server = Server(address)
         server = Server(('127.0.0.1', 25000))
         client1 = Client(('127.0.0.1', 25000), lambda x, y, z: None, create_new_server)
-        client2 = Client(('127.0.0.1', 25000), receive, create_new_server)
+        client2 = Client(('127.0.0.1', 25000), self.receive, create_new_server)
         time.sleep(1)
         server.stop()
         time.sleep(2)
         client1.send_message("test", "Hello", "red")
         time.sleep(0.2)
-        self.assertEqual("Hello", received_message)
-        self.assertEqual("test", received_name)
-        self.assertEqual("red", received_color)
+        self.assertEqual("Hello", self.received_message)
+        self.assertEqual("test", self.received_name)
+        self.assertEqual("red", self.received_color)
         client1.stop()
         client2.stop()
-        time.sleep(0.1)
+        time.sleep(0.2)
         server.stop()
 
 

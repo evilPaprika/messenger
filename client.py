@@ -112,6 +112,7 @@ class Client:
 
     def stop(self):
         self._running = False
+        self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
 
     def _encrypt(self):
