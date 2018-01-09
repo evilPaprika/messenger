@@ -2,6 +2,7 @@ import json
 import socket
 from threading import Thread
 import time
+from encryption import Encryption
 
 
 class Server:
@@ -10,15 +11,16 @@ class Server:
         :param server_address: например: ('127.0.0.1', 25000)
         """
         self.address = server_address
-        self.sock = socket.socket()
-        self.sock.bind(self.address)
-        self.connections = {}
+        self._sock = socket.socket()
+        self._sock.bind(self.address)
+        self._connections = {}
         self._main_client = None
-        self.messages = []
+        self._messages = []
+        self._encryption = Encryption()
         self._running = True
-        self.sock.listen(32)
+        self._sock.listen(32)
 
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         thread = Thread(target=self._waiting_for_connections)
         thread.daemon = True
         thread.start()
@@ -29,10 +31,11 @@ class Server:
     def _waiting_for_connections(self):
         while self._running:
             try:
-                connection, address = self.sock.accept()
+                connection, address = self._sock.accept()
                 if not self._main_client:
                     self._main_client = address
-                self.connections.update({connection: json.loads(connection.recv(1024).decode())['userdata']})
+                self._connections.update({connection: json.loads(
+                    self._encryption.decrypt(connection.recv(1024)).decode())['userdata']})
                 self._send_current_connections()
                 self._send_system_message("new connection established with " + str(address))
                 thread = Thread(target=self.receive_data, args=[connection, address])
@@ -50,11 +53,11 @@ class Server:
                 data = connection.recv(1024)
             except socket.error:
                 self._send_system_message("client " + str(address) + " has disconnected")
-                self.connections.pop(connection)
+                self._connections.pop(connection)
                 self._send_current_connections()
                 break
             if data:
-                messages = data.decode().split("}{")
+                messages = self._encryption.decrypt(data).decode().split("}{")
                 if len(messages) > 1:
                     messages = [messages[0] + "}"] + ["{" + i + "}" for i in messages[1:-1]] + ["{" + messages[-1]]
                 for message in messages:
@@ -63,41 +66,35 @@ class Server:
     def _handle_message(self, message, connection):
         json_data = json.loads(message)
         if "userdata" in json_data:
-            self.connections[connection] = json_data['userdata']
+            self._connections[connection] = json_data['userdata']
             self._send_current_connections()
         else:
-            self.messages.append(message)
+            self._messages.append(message)
 
     def _send_to_all(self):
         while self._running:
             time.sleep(0.01)
-            if self.messages:
-                for message in self.messages[:]:
-                    for connection in self.connections.keys():
-                        connection.sendall(message.encode())
-                    self.messages.remove(message)
+            if self._messages:
+                for message in self._messages[:]:
+                    for connection in self._connections.keys():
+                        connection.sendall(self._encryption.encrypt(message.encode()))
+                    self._messages.remove(message)
 
     def _send_system_message(self, text):
-        self.messages.append(json.dumps(
+        self._messages.append(json.dumps(
             {"username": "system", "text": text,
              "color": "blue"}))
 
     def _send_current_connections(self):
-        c_list = [c.getpeername() for c in self.connections.keys() if c.getpeername() != self._main_client]
-        self.messages.append(json.dumps(
+        c_list = [c.getpeername() for c in self._connections.keys() if c.getpeername() != self._main_client]
+        self._messages.append(json.dumps(
             {"connections_list": c_list}))
-        self.messages.append(json.dumps(
-            {"users_data": list(self.connections.values())}))
+        self._messages.append(json.dumps(
+            {"users_data": list(self._connections.values())}))
 
     def stop(self):
         self._running = False
-        for connection in list(self.connections.keys()):
+        for connection in list(self._connections.keys()):
             connection.shutdown(socket.SHUT_RDWR)
             connection.close()
-        self.sock.close()
-
-    def _encrypt(self):
-        pass
-
-    def _decrypt(self):
-        pass
+        self._sock.close()

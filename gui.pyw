@@ -4,6 +4,7 @@ from tkinter import ttk
 import menu_frame
 import settings_popup
 from chat_frame import Chat
+from encryption import Encryption
 
 
 class Window(Tk):

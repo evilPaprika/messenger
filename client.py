@@ -4,6 +4,7 @@ import json
 from threading import Thread
 import time
 import os
+from encryption import Encryption
 
 
 class Client:
@@ -18,6 +19,7 @@ class Client:
         self._start_new_server = start_new_server
         self.connections_list = []
         self.connections_info = []
+        self._encryption = Encryption()
         self.has_new_connections_info = True
         self._running = True
         self.sock = socket.socket()
@@ -52,7 +54,7 @@ class Client:
 
     def _handle_data(self, data):
         # данные в посылаются в формате json
-        messages = data.decode().split("}{") # разделение пакетов json
+        messages = self._encryption.decrypt(data).decode().split("}{") # разделение пакетов json
         if len(messages) > 1:
             messages = [messages[0] + "}"] + ["{" + i + "}" for i in messages[1:-1]] + ["{" + messages[-1]]
         for message in messages:
@@ -61,8 +63,8 @@ class Client:
     def send_message(self, name, text, color):
         config = configparser.ConfigParser()
         config.read("config.ini")
-        self.sock.sendall(json.dumps({"username":  name,
-                                      "text": text, "color": color}).encode())
+        self.sock.sendall(self._encryption.encrypt(json.dumps({"username":  name,
+                                      "text": text, "color": color}).encode()))
 
     def _handle_message(self, message):
         json_data = json.loads(message)
@@ -105,8 +107,8 @@ class Client:
                 name = config.get("USER INFORMATION", "username")
                 color = config.get("USER INFORMATION", "color")
                 status = config.get("USER INFORMATION", "status")
-                self.sock.sendall(
-                    json.dumps({"userdata": {"username": name, "color": color, "status": status}}).encode())
+                self.sock.sendall(self._encryption.encrypt(
+                    json.dumps({"userdata": {"username": name, "color": color, "status": status}}).encode()))
                 prev_modified = modified
             time.sleep(1)
 
@@ -114,9 +116,3 @@ class Client:
         self._running = False
         self.sock.shutdown(socket.SHUT_RDWR)
         self.sock.close()
-
-    def _encrypt(self):
-        pass
-
-    def _decrypt(self):
-        pass
