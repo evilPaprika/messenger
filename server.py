@@ -80,6 +80,7 @@ class Server:
                     for connection in self._connections.keys():
                         connection.sendall(self._encryption.encrypt(message.encode()))
                     self._messages.remove(message)
+                    time.sleep(0.1)
             time.sleep(0.01)
 
     def _send_system_message(self, text):
@@ -91,6 +92,7 @@ class Server:
         c_list = [c.getpeername() for c in self._connections.keys() if c.getpeername() != self._main_client]
         self._messages.append(json.dumps(
             {"connections_list": c_list}))
+        time.sleep(0.1)
         self._messages.append(json.dumps(
             {"users_data": list(self._connections.values())}))
 
