@@ -47,7 +47,7 @@ class Chat(Frame):
     def close(self):
         self.side_panel.stop()
         self.client.stop()
-        time.sleep(0.1)
+        time.sleep(0.2)
         if self.server:
             self.server.stop()
 

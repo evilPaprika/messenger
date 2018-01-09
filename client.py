@@ -4,6 +4,7 @@ import json
 from threading import Thread
 import time
 import os
+
 from encryption import Encryption
 
 
@@ -54,7 +55,7 @@ class Client:
 
     def _handle_data(self, data):
         # данные в посылаются в формате json
-        messages = self._encryption.decrypt(data).decode().split("}{") # разделение пакетов json
+        messages = self._encryption.decrypt(data).decode().split("}{")  # разделение пакетов json
         if len(messages) > 1:
             messages = [messages[0] + "}"] + ["{" + i + "}" for i in messages[1:-1]] + ["{" + messages[-1]]
         for message in messages:
@@ -63,8 +64,8 @@ class Client:
     def send_message(self, name, text, color):
         config = configparser.ConfigParser()
         config.read("config.ini")
-        self.sock.sendall(self._encryption.encrypt(json.dumps({"username":  name,
-                                      "text": text, "color": color}).encode()))
+        self.sock.sendall(self._encryption.encrypt(json.dumps({"username": name,
+                                                               "text": text, "color": color}).encode()))
 
     def _handle_message(self, message):
         json_data = json.loads(message)
@@ -80,7 +81,7 @@ class Client:
             self.display_message(json_data["username"], json_data["text"], json_data["color"])
 
     def _handle_server_down(self):
-        # обработка отключения сервера, выбор клиента создающеко новый сервер
+        # обработка отключения сервера, выбор клиента создающего новый сервер
         self.connections_list.sort(key=lambda tup: str(tup))
         if self.connections_list[0] == self.sock.getsockname():
             self._start_new_server(('', 25000))

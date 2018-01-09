@@ -52,6 +52,8 @@ class Server:
             try:
                 data = connection.recv(1024)
             except socket.error:
+                if not self._running:
+                    break
                 self._send_system_message("client " + str(address) + " has disconnected")
                 self._connections.pop(connection)
                 self._send_current_connections()
@@ -73,12 +75,12 @@ class Server:
 
     def _send_to_all(self):
         while self._running:
-            time.sleep(0.01)
             if self._messages:
                 for message in self._messages[:]:
                     for connection in self._connections.keys():
                         connection.sendall(self._encryption.encrypt(message.encode()))
                     self._messages.remove(message)
+            time.sleep(0.01)
 
     def _send_system_message(self, text):
         self._messages.append(json.dumps(

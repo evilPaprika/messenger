@@ -47,9 +47,11 @@ class TestMessenger(unittest.TestCase):
 
     def test_decentralisation(self):
         self.set_to_default()
+
         def create_new_server(address):
             nonlocal server
             server = Server(address)
+
         server = Server(('127.0.0.1', 25000))
         client1 = Client(('127.0.0.1', 25000), lambda x, y, z: None, create_new_server)
         client2 = Client(('127.0.0.1', 25000), self.receive, create_new_server)
